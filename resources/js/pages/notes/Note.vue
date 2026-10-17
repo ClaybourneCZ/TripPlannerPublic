@@ -8,15 +8,18 @@ import { Head } from '@inertiajs/vue3';
 import { MapPin, Route } from 'lucide-vue-next';
 import { computed, nextTick, ref } from 'vue';
 
+const props = defineProps<{ tripId?: number | string | null }>();
+
 const recommendedTrips = tripSamples;
 
 interface MapRef {
     flyToCoordinate: (coords: LatLngPoint, zoom?: number) => void;
 }
 
-const activeTripId = ref(recommendedTrips[0].id);
+const initialTrip = recommendedTrips.find((trip) => trip.id === Number(props.tripId)) ?? recommendedTrips[0];
+const activeTripId = ref(initialTrip.id);
 
-const routeWaypoints = ref<WaypointDescription[]>(cloneWaypointDescriptions(recommendedTrips[0].waypoints));
+const routeWaypoints = ref<WaypointDescription[]>(cloneWaypointDescriptions(initialTrip.waypoints));
 const routePoints = ref<LatLngPoint[]>(routeWaypoints.value.map((waypoint) => waypoint.point));
 const mapComponentRef = ref<MapRef | null>(null);
 const mapSectionRef = ref<HTMLElement | null>(null);

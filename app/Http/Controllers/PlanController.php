@@ -8,7 +8,9 @@ use Inertia\Inertia;
 class PlanController extends Controller
 {
     //
-    public function index(){
-        return Inertia::render('plans/Plan');
+    public function index(Request $request){
+        return Inertia::render('plans/Plan', [
+            'tripId' => $request->query('trip'),
+        ]);
     }
 }

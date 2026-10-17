@@ -11,9 +11,9 @@ This repository is also a learning project: it is a way to gain practical
 experience with Laravel, Vue, and the work involved in developing and operating
 a web application.
 
-## Project stage: version 0.1
+## Project stage: version 0.3
 
-TripPlanner is currently at version **0.1**: an early setup and starting point
+TripPlanner is currently at version **0.3**: an early setup and starting point
 for further development, rather than a complete trip-planning product. The
 application has a working foundation for accounts and a first, browser-based
 route-planning experience. Much of the wider product idea is still to be
@@ -24,12 +24,16 @@ In this early version, users can:
 - register, sign in, and manage basic account settings;
 - open an authenticated dashboard;
 - create a route by adding and removing points on a map;
-- add names, tags, and descriptions to sample route waypoints.
+- add names, tags, and descriptions to sample route waypoints;
+- export sample trips in basic GPX and KML formats or open them in supported map apps;
+- browse a basic recommendations page with sample routes and map previews.
 
 Routes and waypoint details are currently held in frontend state or sample
-data. They are not saved as trips in the application database. Sharing, groups,
-chat, exports, and place recommendations are future possibilities, not
-implemented features.
+data. They are not saved as trips in the application database. Export is a
+prototype that prepares files and map links from the sample trip data; it does
+not yet export persisted or fully routed trip geometry. Recommendations are a
+basic view of sample routes, not a recommendation service. Public sharing,
+groups, and chat remain future possibilities.
 
 ## How the application is put together
 

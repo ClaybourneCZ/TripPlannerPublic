@@ -48,6 +48,11 @@ const mainNavItems: NavItem[] = [
         href: '/notes',
         icon: NotebookPen,
     },
+    {
+        title: 'Recommendations',
+        href: '/recommendations',
+        icon: MapPinned,
+    },
 ];
 
 const rightNavItems: NavItem[] = [

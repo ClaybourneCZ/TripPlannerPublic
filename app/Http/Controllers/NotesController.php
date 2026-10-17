@@ -10,10 +10,12 @@ class NotesController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         //
-        return Inertia::render('notes/Note');
+        return Inertia::render('notes/Note', [
+            'tripId' => $request->query('trip'),
+        ]);
     }
 
     /**

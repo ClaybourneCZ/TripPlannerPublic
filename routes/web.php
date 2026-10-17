@@ -16,6 +16,8 @@ Route::get('dashboard', function () {
 
 Route::resource('plans', PlanController::class)->middleware('auth');
 
+Route::resource('recommendations', RecommendationsController::class)->middleware('auth');
+
 Route::resource('notes', NotesController::class)->middleware('auth');
 
 require __DIR__.'/settings.php';
