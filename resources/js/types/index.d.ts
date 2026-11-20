@@ -5,12 +5,16 @@ export interface Auth {
     user: User;
 }
 
+export type FeatureState = 'enabled' | 'maintenance' | 'hidden';
+
 export interface BreadcrumbItem {
+    feature?: string;
     title: string;
     href: string;
 }
 
 export interface NavItem {
+    feature?: string;
     title: string;
     href: string;
     icon?: LucideIcon;
@@ -23,6 +27,8 @@ export type AppPageProps<T extends Record<string, unknown> = Record<string, unkn
     auth: Auth;
     ziggy: Config & { location: string };
     sidebarOpen: boolean;
+    features: Record<string, FeatureState>;
+    appEntryUrl: string;
 };
 
 export interface User {

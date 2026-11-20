@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
-import { MapPin, Route, Trash2 } from 'lucide-vue-next';
+import { Check, MapPin, Route, Save, Trash2 } from 'lucide-vue-next';
 
 // Types
 type LatLngPoint = [number, number];
@@ -8,9 +8,13 @@ type LatLngPoint = [number, number];
 // Props and Emits
 defineProps<{
     points: LatLngPoint[];
+    tripName: string;
+    isSaved: boolean;
 }>();
 
 const emit = defineEmits<{
+    'update:tripName': [name: string];
+    save: [];
     focus: [point: LatLngPoint];
     clear: [];
 }>();
@@ -36,10 +40,29 @@ const getPointAccentClass = (index: number, total: number) => {
 
 <template>
     <div class="flex h-full flex-col gap-5 border-l border-sidebar-border/70 bg-background p-5 dark:border-sidebar-border">
-        <div>
-            <p class="text-sm font-medium text-muted-foreground">Current route</p>
-            <h2 class="mt-1 text-xl font-semibold tracking-normal text-foreground">Waypoints</h2>
-            <p class="mt-2 text-sm leading-6 text-muted-foreground">Click a waypoint to focus it on the map.</p>
+        <div class="flex items-start justify-between gap-3">
+            <div>
+                <p class="text-sm font-medium text-muted-foreground">Current route</p>
+                <h2 class="mt-1 text-xl font-semibold tracking-normal text-foreground">Waypoints</h2>
+                <p class="mt-2 text-sm leading-6 text-muted-foreground">Click a waypoint to focus it on the map.</p>
+            </div>
+            <Button class="shrink-0 gap-2 px-4" @click="emit('save')">
+                <Check v-if="isSaved" class="size-4" />
+                <Save v-else class="size-4" />
+                {{ isSaved ? 'Saved' : 'Save trip' }}
+            </Button>
+        </div>
+
+        <div class="space-y-2">
+            <label for="trip-name" class="text-sm font-medium">Trip name</label>
+            <input
+                id="trip-name"
+                :value="tripName"
+                type="text"
+                placeholder="Name this trip"
+                class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                @input="emit('update:tripName', ($event.target as HTMLInputElement).value)"
+            />
         </div>
 
         <div class="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
@@ -82,9 +105,11 @@ const getPointAccentClass = (index: number, total: number) => {
             </li>
         </ul>
 
-        <Button v-if="points.length > 0" variant="destructive" class="justify-start gap-2" @click="emit('clear')">
-            <Trash2 class="size-4" />
-            Clear route
-        </Button>
+        <div class="mt-auto flex flex-col gap-2">
+            <Button v-if="points.length > 0" variant="destructive" class="justify-start gap-2" @click="emit('clear')">
+                <Trash2 class="size-4" />
+                Clear route
+            </Button>
+        </div>
     </div>
 </template>

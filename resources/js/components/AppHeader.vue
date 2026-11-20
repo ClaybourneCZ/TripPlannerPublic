@@ -9,10 +9,11 @@ import { NavigationMenu, NavigationMenuItem, NavigationMenuList, navigationMenuT
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import UserMenuContent from '@/components/UserMenuContent.vue';
+import { useFeatures } from '@/composables/useFeatures';
 import { getInitials } from '@/composables/useInitials';
 import type { BreadcrumbItem, NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid, Menu, Search, Map, MapPinned, NotebookPen } from 'lucide-vue-next';
+import { BookOpen, Folder, LayoutGrid, Map, MapPinned, Menu, NotebookPen, Search } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 interface Props {
@@ -26,34 +27,44 @@ const props = withDefaults(defineProps<Props>(), {
 const page = usePage();
 const auth = computed(() => page.props.auth);
 
-const isCurrentRoute = computed(() => (url: string) => page.url === url);
+const isCurrentRoute = computed(() => (url: string) => {
+    if (url === '/trips/create') return page.url.split('?')[0].startsWith('/trips/');
+    return page.url === url;
+});
 
 const activeItemStyles = computed(
     () => (url: string) => (isCurrentRoute.value(url) ? 'text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100' : ''),
 );
 
-const mainNavItems: NavItem[] = [
+const { filterNavigation, appEntryUrl } = useFeatures();
+const navigationItems: NavItem[] = [
     {
         title: 'Dashboard',
+        feature: 'dashboard',
         href: '/dashboard',
         icon: LayoutGrid,
     },
     {
-        title: 'Plan',
-        href: '/plans',
+        title: 'Plan a trip',
+        feature: 'plan',
+        href: '/trips/create',
         icon: Map,
     },
     {
         title: 'Notes',
+        feature: 'notes',
         href: '/notes',
         icon: NotebookPen,
     },
     {
         title: 'Recommendations',
+        feature: 'recommendations',
         href: '/recommendations',
         icon: MapPinned,
     },
 ];
+
+const mainNavItems = computed(() => filterNavigation(navigationItems));
 
 const rightNavItems: NavItem[] = [
     {
@@ -117,7 +128,7 @@ const rightNavItems: NavItem[] = [
                     </Sheet>
                 </div>
 
-                <Link :href="route('dashboard')" class="flex items-center gap-x-2">
+                <Link :href="appEntryUrl" class="flex items-center gap-x-2">
                     <AppLogo />
                 </Link>
 

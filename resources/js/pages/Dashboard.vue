@@ -1,62 +1,34 @@
 <script setup lang="ts">
+import FeatureAction from '@/components/FeatureAction.vue';
 import MapComponentRecommendation from '@/components/maps/MapComponentRecommendation.vue';
-import { Button } from '@/components/ui/button';
-import { tripSamples } from '@/data/tripSamples';
-import { downloadTripFile, getTripMapAppUrl, type TripExportFormat, type TripMapApp } from '@/services/tripExport';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/vue3';
 import { Download, Globe2, Map, MapPin, Plus, Route } from 'lucide-vue-next';
-import { computed, onMounted, ref } from 'vue';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Dashboard',
+        feature: 'dashboard',
         href: '/dashboard',
     },
 ];
 
-const myTrips = tripSamples.map((trip) => ({
-    ...trip,
-    points: trip.waypoints.map((waypoint) => waypoint.point),
-    stops: trip.waypoints.map((waypoint) => waypoint.name ?? 'Unnamed stop'),
-}));
-
-const selectedTripId = ref(myTrips[0]?.id ?? null);
-const exportTripId = ref(myTrips[0]?.id ?? null);
-const publishedTripIds = ref<number[]>([]);
-const selectedTrip = computed(() => myTrips.find((trip) => trip.id === selectedTripId.value));
-const exportTrip = computed(() => myTrips.find((trip) => trip.id === exportTripId.value));
-const isSelectedTripPublished = computed(() => selectedTripId.value !== null && publishedTripIds.value.includes(selectedTripId.value));
-
-onMounted(() => {
-    const savedPublishedTripIds = window.localStorage.getItem('publishedTripIds');
-    if (savedPublishedTripIds) {
-        try {
-            publishedTripIds.value = JSON.parse(savedPublishedTripIds) as number[];
-        } catch {
-            publishedTripIds.value = [];
-        }
-    }
-});
-
-const togglePublished = () => {
-    const tripId = selectedTripId.value;
-    if (tripId === null) return;
-
-    publishedTripIds.value = isSelectedTripPublished.value
-        ? publishedTripIds.value.filter((id) => id !== tripId)
-        : [...publishedTripIds.value, tripId];
-    window.localStorage.setItem('publishedTripIds', JSON.stringify(publishedTripIds.value));
-};
-
-const downloadTrip = (format: TripExportFormat) => {
-    const trip = exportTrip.value;
-    if (!trip) return;
-    downloadTripFile(trip, format);
-};
-
-const mapAppUrl = (app: TripMapApp) => (exportTrip.value ? getTripMapAppUrl(exportTrip.value, app) : '#');
+interface TripCard {
+    id: number;
+    name: string;
+    notes: string | null;
+    distance: number | null;
+    duration: number | null;
+    points: [number, number][];
+    stops: string[];
+}
+const props = defineProps<{
+    trips: { data: TripCard[]; prev_page_url: string | null; next_page_url: string | null };
+    notice: string | null;
+}>();
+const formatDistance = (meters: number | null) => (meters === null ? 'Distance unknown' : `${(meters / 1000).toFixed(1)} km`);
+const formatDuration = (seconds: number | null) => (seconds === null ? 'Duration unknown' : `${Math.round(seconds / 60)} min`);
 </script>
 
 <template>
@@ -64,6 +36,7 @@ const mapAppUrl = (app: TripMapApp) => (exportTrip.value ? getTripMapAppUrl(expo
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <p v-if="notice" role="status" class="rounded-md border p-3 text-sm">{{ notice }}</p>
             <div class="grid auto-rows-min gap-4 md:grid-cols-3">
                 <div
                     class="relative flex aspect-video flex-col justify-between overflow-hidden rounded-xl border border-sidebar-border/70 bg-background p-5 shadow-xs transition hover:border-primary/40 hover:shadow-sm dark:border-sidebar-border"
@@ -88,15 +61,15 @@ const mapAppUrl = (app: TripMapApp) => (exportTrip.value ? getTripMapAppUrl(expo
                             <Map class="size-4" />
                             <span>Route planner</span>
                         </div>
-                        <Button as-child>
-                            <Link :href="route('plans.index')">
-                                <Plus class="size-4" />
-                                Create
-                            </Link>
-                        </Button>
+                        <FeatureAction feature="plan" :href="route('trips.create')">
+                            <Plus class="size-4" />
+                            Create
+                        </FeatureAction>
                     </div>
                 </div>
-                <div class="flex aspect-video flex-col justify-between gap-3 rounded-xl border border-sidebar-border/70 bg-background p-5 shadow-xs dark:border-sidebar-border">
+                <div
+                    class="flex aspect-video flex-col justify-between gap-3 rounded-xl border border-sidebar-border/70 bg-background p-5 shadow-xs dark:border-sidebar-border"
+                >
                     <div>
                         <div class="flex items-center justify-between gap-3">
                             <p class="text-sm font-medium text-muted-foreground">Share your route</p>
@@ -106,50 +79,26 @@ const mapAppUrl = (app: TripMapApp) => (exportTrip.value ? getTripMapAppUrl(expo
                         <p class="mt-1 text-sm leading-5 text-muted-foreground">Choose one of your trips to share with other travelers.</p>
                     </div>
 
-                    <div class="flex items-center gap-2">
-                        <select
-                            v-model="selectedTripId"
-                            aria-label="Trip to publish"
-                            class="min-w-0 flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        >
-                            <option v-for="trip in myTrips" :key="trip.id" :value="trip.id">{{ trip.name }}</option>
-                        </select>
-                        <Button :variant="isSelectedTripPublished ? 'outline' : 'default'" :disabled="!selectedTrip" @click="togglePublished">
-                            {{ isSelectedTripPublished ? 'Unpublish' : 'Publish' }}
-                        </Button>
-                    </div>
-                    <p v-if="selectedTrip" class="text-xs text-muted-foreground">
-                        {{ isSelectedTripPublished ? `${selectedTrip.name} is published` : 'Only the selected trip will be published.' }}
-                    </p>
+                    <FeatureAction feature="publish" class="w-fit" :href="route('dashboard.publish')">
+                        <Globe2 class="size-4" />
+                        Publish a trip
+                    </FeatureAction>
                 </div>
-                <div class="flex min-h-[220px] flex-col justify-between gap-3 rounded-xl border border-sidebar-border/70 bg-background p-5 shadow-xs dark:border-sidebar-border">
+                <div
+                    class="flex min-h-[220px] flex-col justify-between gap-3 rounded-xl border border-sidebar-border/70 bg-background p-5 shadow-xs dark:border-sidebar-border"
+                >
                     <div>
                         <div class="flex items-center justify-between gap-3">
                             <p class="text-sm font-medium text-muted-foreground">Take it with you</p>
                             <Download class="size-5 text-muted-foreground" />
                         </div>
                         <h2 class="mt-2 text-xl font-semibold tracking-normal text-foreground">Export a trip</h2>
-                        <p class="mt-1 text-sm leading-5 text-muted-foreground">Download route stops or open them in your map app.</p>
+                        <p class="mt-1 text-sm leading-5 text-muted-foreground">Choose a trip, file format, and map app on the export page.</p>
                     </div>
-
-                    <select
-                        v-model="exportTripId"
-                        aria-label="Trip to export"
-                        class="min-w-0 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                        <option v-for="trip in myTrips" :key="trip.id" :value="trip.id">{{ trip.name }}</option>
-                    </select>
-
-                    <div class="flex flex-wrap gap-2">
-                        <Button size="sm" :disabled="!exportTrip" @click="downloadTrip('gpx')">GPX</Button>
-                        <Button size="sm" variant="outline" :disabled="!exportTrip" @click="downloadTrip('kml')">KML</Button>
-                    </div>
-
-                    <div class="flex flex-wrap gap-x-3 gap-y-1 text-xs font-medium text-muted-foreground">
-                        <a :href="mapAppUrl('mapy')" target="_blank" rel="noopener noreferrer" class="hover:text-foreground">Mapy.com</a>
-                        <a :href="mapAppUrl('google')" target="_blank" rel="noopener noreferrer" class="hover:text-foreground">Google Maps</a>
-                        <a :href="mapAppUrl('apple')" target="_blank" rel="noopener noreferrer" class="hover:text-foreground">Apple Maps</a>
-                    </div>
+                    <FeatureAction feature="export" class="w-fit" :href="route('dashboard.export')">
+                        <Download class="size-4" />
+                        Export trip
+                    </FeatureAction>
                 </div>
             </div>
             <div class="flex flex-1 flex-col gap-6 rounded-xl border border-sidebar-border/70 p-5 md:min-h-min dark:border-sidebar-border">
@@ -161,16 +110,20 @@ const mapAppUrl = (app: TripMapApp) => (exportTrip.value ? getTripMapAppUrl(expo
                     </p>
                 </div>
 
-                <div class="grid gap-4 xl:grid-cols-3">
+                <div v-if="!props.trips.data.length" class="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
+                    No saved trips yet.
+                    <FeatureAction feature="plan" variant="link" :href="route('trips.create')">Create your first trip</FeatureAction>.
+                </div>
+                <div v-else class="grid gap-4 xl:grid-cols-3">
                     <article
-                        v-for="trip in myTrips"
+                        v-for="trip in props.trips.data"
                         :key="trip.id"
                         class="grid min-h-[300px] overflow-hidden rounded-lg border border-sidebar-border/70 bg-card shadow-sm md:grid-cols-[minmax(0,1fr)_220px] xl:grid-cols-1 dark:border-sidebar-border"
                     >
                         <div class="flex flex-col gap-4 p-5">
                             <div>
                                 <h2 class="text-lg font-semibold tracking-normal text-card-foreground">{{ trip.name }}</h2>
-                                <p class="mt-2 text-sm leading-6 text-muted-foreground">{{ trip.summary }}</p>
+                                <p class="mt-2 text-sm leading-6 text-muted-foreground">{{ trip.notes }}</p>
                             </div>
 
                             <div class="mt-auto flex flex-wrap gap-2 text-sm text-muted-foreground">
@@ -178,13 +131,13 @@ const mapAppUrl = (app: TripMapApp) => (exportTrip.value ? getTripMapAppUrl(expo
                                     class="inline-flex items-center gap-1.5 rounded-md border border-sidebar-border/70 px-2.5 py-1 dark:border-sidebar-border"
                                 >
                                     <Route class="size-4" />
-                                    {{ trip.distance }}
+                                    {{ formatDistance(trip.distance) }}
                                 </span>
                                 <span
                                     class="inline-flex items-center gap-1.5 rounded-md border border-sidebar-border/70 px-2.5 py-1 dark:border-sidebar-border"
                                 >
                                     <MapPin class="size-4" />
-                                    {{ trip.duration }}
+                                    {{ formatDuration(trip.duration) }}
                                 </span>
                             </div>
 
@@ -202,12 +155,10 @@ const mapAppUrl = (app: TripMapApp) => (exportTrip.value ? getTripMapAppUrl(expo
                             </div>
 
                             <div class="flex flex-wrap gap-2">
-                                <Button as-child>
-                                    <Link :href="route('plans.index', { trip: trip.id })">Manage waypoints</Link>
-                                </Button>
-                                <Button variant="outline" as-child>
-                                    <Link :href="route('notes.index', { trip: trip.id })">Modify notes</Link>
-                                </Button>
+                                <FeatureAction feature="plan" :href="route('trips.edit', trip.id)">Open trip</FeatureAction>
+                                <FeatureAction feature="notes" variant="outline" :href="route('notes.index', { trip: trip.id })"
+                                    >Modify notes</FeatureAction
+                                >
                             </div>
                         </div>
 
@@ -218,6 +169,10 @@ const mapAppUrl = (app: TripMapApp) => (exportTrip.value ? getTripMapAppUrl(expo
                         </div>
                     </article>
                 </div>
+                <nav class="flex gap-4 text-sm" aria-label="Trip pages">
+                    <Link v-if="props.trips.prev_page_url" :href="props.trips.prev_page_url" class="underline">Previous</Link>
+                    <Link v-if="props.trips.next_page_url" :href="props.trips.next_page_url" class="underline">Next</Link>
+                </nav>
             </div>
         </div>
     </AppLayout>

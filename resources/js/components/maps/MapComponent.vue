@@ -28,6 +28,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
     'update:modelValue': [value: LatLngPoint[]];
+    'remove-point': [index: number];
 }>();
 
 // --- Variables ---
@@ -35,6 +36,7 @@ const mapContainer = ref<HTMLElement | null>(null);
 let map: L.Map | null = null;
 let routingControl: L.Routing.Control | null = null; // Router instance (for 2+ points)
 let manualMarker: L.Marker | null = null; // Instance of the marker (for cases where there is only 1 point)
+let fallbackLine: L.Polyline | null = null;
 
 // --- Fix missing icons (Vite/Webpack) ---
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -67,13 +69,10 @@ const initMap = () => {
         maxZoom: 20,
     }).addTo(map);
     */
-    L.tileLayer(
-    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    {
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors',
         maxZoom: 19,
-    }
-    ).addTo(map);
+    }).addTo(map);
 
     // 3. Event Listener: Click on the map
     map.on('click', (e: L.LeafletMouseEvent) => {
@@ -107,6 +106,10 @@ const redrawMapElements = () => {
         map.removeLayer(manualMarker);
         manualMarker = null;
     }
+    if (fallbackLine) {
+        map.removeLayer(fallbackLine);
+        fallbackLine = null;
+    }
 
     const points = props.modelValue;
 
@@ -123,7 +126,7 @@ const redrawMapElements = () => {
 
         manualMarker.on('click', () => {
             if (!props.editable) return;
-            emit('update:modelValue', []); // Clear the point on click (only in editable mode)
+            emit('remove-point', 0);
         });
 
         return;
@@ -136,6 +139,7 @@ const redrawMapElements = () => {
     routingControl = L.Routing.control({
         waypoints: waypoints, // Here we pass ALL points
         routeWhileDragging: false,
+        fitSelectedRoutes: false,
 
         // Line style
         lineOptions: {
@@ -164,8 +168,7 @@ const redrawMapElements = () => {
 
             marker.on('click', () => {
                 if (!props.editable) return;
-                const newPoints = props.modelValue.filter((_, index) => index !== i);
-                emit('update:modelValue', newPoints);
+                emit('remove-point', i);
             });
 
             return marker;
@@ -174,6 +177,14 @@ const redrawMapElements = () => {
         show: false, // Hide itinerary
         addWaypoints: false, // Prohibiting adding points by dragging (we use clicking)
     }).addTo(map);
+
+    const currentControl = routingControl;
+    currentControl.on('routingerror', () => {
+        if (!map || routingControl !== currentControl) return;
+        map.removeControl(currentControl);
+        routingControl = null;
+        fallbackLine = L.polyline(points, { color: '#3b82f6', weight: 4, dashArray: '6 6' }).addTo(map);
+    });
 
     fitRouteBounds();
 };
@@ -207,6 +218,8 @@ watch(
 );
 
 onUnmounted(() => {
+    routingControl = null;
+    fallbackLine = null;
     if (map) {
         map.remove();
         map = null;

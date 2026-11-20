@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { useFeatures } from '@/composables/useFeatures';
 import { Head, Link } from '@inertiajs/vue3';
+const { appEntryUrl } = useFeatures();
 </script>
 
 <template>
@@ -9,13 +11,18 @@ import { Head, Link } from '@inertiajs/vue3';
     </Head>
     <div class="flex min-h-screen flex-col items-center bg-[#FDFDFC] p-6 text-[#1b1b18] lg:justify-center lg:p-8 dark:bg-[#0a0a0a]">
         <header class="mb-6 w-full max-w-[335px] text-sm not-has-[nav]:hidden lg:max-w-4xl">
+            <div v-if="$page.props.auth.user && appEntryUrl === route('home')" class="mb-4 space-y-3">
+                <p role="status">Pages are temporarily unavailable.</p>
+                <Link :href="route('profile.edit')" class="mr-4 underline">Account settings</Link>
+                <Link :href="route('logout')" method="post" as="button" class="underline">Log out</Link>
+            </div>
             <nav class="flex items-center justify-end gap-4">
                 <Link
                     v-if="$page.props.auth.user"
-                    :href="route('dashboard')"
+                    :href="appEntryUrl"
                     class="inline-block rounded-sm border border-[#19140035] px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#1915014a] dark:border-[#3E3E3A] dark:text-[#EDEDEC] dark:hover:border-[#62605b]"
                 >
-                    Dashboard
+                    Open app
                 </Link>
                 <template v-else>
                     <Link

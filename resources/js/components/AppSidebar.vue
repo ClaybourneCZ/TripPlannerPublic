@@ -3,23 +3,30 @@ import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
+import { useFeatures } from '@/composables/useFeatures';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
 import { BookOpen, Folder, LayoutGrid, Map } from 'lucide-vue-next';
+import { computed } from 'vue';
 import AppLogo from './AppLogo.vue';
 
-const mainNavItems: NavItem[] = [
+const { filterNavigation, appEntryUrl } = useFeatures();
+const navigationItems: NavItem[] = [
     {
         title: 'Dashboard',
+        feature: 'dashboard',
         href: '/dashboard',
         icon: LayoutGrid,
     },
     {
         title: 'Recommendations',
+        feature: 'recommendations',
         href: '/recommendations',
         icon: Map,
     },
 ];
+
+const mainNavItems = computed(() => filterNavigation(navigationItems));
 
 const footerNavItems: NavItem[] = [
     {
@@ -41,7 +48,7 @@ const footerNavItems: NavItem[] = [
             <SidebarMenu>
                 <SidebarMenuItem>
                     <SidebarMenuButton size="lg" as-child>
-                        <Link :href="route('dashboard')">
+                        <Link :href="appEntryUrl">
                             <AppLogo />
                         </Link>
                     </SidebarMenuButton>

@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import FeatureAction from '@/components/FeatureAction.vue';
 import MapComponentRecommendation from '@/components/maps/MapComponentRecommendation.vue';
 import { tripSamples } from '@/data/tripSamples';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
 import { MapPin, Route } from 'lucide-vue-next';
-import { Button } from '@/components/ui/button'; 
 
 const recommendedTrips = tripSamples.map((trip) => ({
     ...trip,
@@ -35,7 +35,7 @@ const recommendedTrips = tripSamples.map((trip) => ({
                     <div class="flex flex-col gap-4 p-5">
                         <div>
                             <h2 class="text-lg font-semibold tracking-normal text-card-foreground">{{ trip.name }}</h2>
-                            <p class="mt-2 text-sm leading-6 text-muted-foreground">{{ trip.summary }}</p>
+                            <p class="mt-2 text-sm leading-6 text-muted-foreground">{{ trip.notes }}</p>
                         </div>
 
                         <div class="mt-auto flex flex-wrap gap-2 text-sm text-muted-foreground">
@@ -66,12 +66,10 @@ const recommendedTrips = tripSamples.map((trip) => ({
                             </span>
                         </div>
 
-                        <Button >
-                            <Link :href="route('dashboard')">
-                                <Plus class="size-4" />
-                                Add to My Trips
-                            </Link>
-                        </Button>
+                        <FeatureAction feature="dashboard" :href="route('dashboard')">
+                            <Plus class="size-4" />
+                            Add to My Trips
+                        </FeatureAction>
                     </div>
 
                     <div

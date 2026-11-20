@@ -13,13 +13,16 @@ declare module 'leaflet' {
         interface ControlOptions {
             waypoints?: LatLngExpression[];
             routeWhileDragging?: boolean;
+            fitSelectedRoutes?: boolean | 'smart';
             lineOptions?: LineOptions;
             createMarker?: (index: number, waypoint: Waypoint, totalWaypoints: number) => Marker | null;
             show?: boolean;
             addWaypoints?: boolean;
         }
 
-        type Control = LeafletControl;
+        interface Control extends LeafletControl {
+            on(event: 'routingerror', handler: () => void): this;
+        }
 
         function control(options: ControlOptions): Control;
     }
